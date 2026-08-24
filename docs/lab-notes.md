@@ -112,3 +112,59 @@ Lo que hay que saber para correr k3s dentro de LXC:
   kernel es compartido.
 
 Todo eso esta automatizado en scripts/prepare-lxc.sh
+
+## Prometheus en bucle de muerte por el limite de memoria
+
+El sintoma llegaba por Grafana, no por Kubernetes: todos los paneles del panel
+de Compute Resources en No data y un aviso de error de plugin. La causa estaba
+un escalon mas abajo, el pod de Prometheus llevaba ocho reinicios.
+
+```
+lastState.terminated.reason  ==>  OOMKilled   exit=137
+```
+
+El detalle que lo explica esta en el log, justo antes de cada muerte:
+
+```
+level=info component=tsdb msg="Replaying WAL, this may take a while"
+level=info component=tsdb msg="WAL segment loaded" segment=1 maxSegment=8
+```
+
+Moria reproduciendo el WAL, no sirviendo consultas. Prometheus pide mucha mas
+memoria al arrancar que en reposo, porque tiene que reconstruir en RAM todo lo
+que aun no ha bajado a bloques. Con el limite en 640Mi eso se convertia en un
+bucle que se alimentaba solo: moria a mitad del replay, al reiniciar el WAL
+era mas largo que antes, y volvia a morir un poco mas pronto. Cuantos mas
+reinicios, mas lejos quedaba el arranque.
+
+Dos cosas que aprender de aqui:
+
+1. Un limite de memoria hay que dimensionarlo por el pico del arranque, no por
+   el consumo estable. Medido despues del arreglo, Prometheus se queda en
+   518Mi en reposo, pero necesita casi el doble para levantarse.
+2. Un contenedor en CrashLoopBackOff que ademas acumula estado en disco no se
+   recupera solo aunque le subas el limite. Hay que darle el limite nuevo y
+   ademas tirar el WAL, que aqui es gratis porque el almacenamiento es
+   efimero: basta con borrar el pod en vez de dejar que reinicie el contenedor.
+
+De paso se desactivan los ServiceMonitor de kubeControllerManager,
+kubeScheduler, kubeProxy y kubeEtcd. En k3s esos cuatro componentes viven
+dentro del mismo binario y no escuchan en los puertos que el chart da por
+supuestos, asi que solo aportaban objetivos caidos.
+
+### Ampliar un LXC en caliente
+
+Aprovechando la parada se subieron los nodos de 3 a 4 GB y de 2 a 3 nucleos.
+En LXC esto no requiere reiniciar nada, porque el limite es un cgroup y se
+cambia al vuelo:
+
+```bash
+for i in 201 202 203; do pct set $i -memory 4096 -cores 3; done
+```
+
+Con lxcfs montado, el `free` de dentro del contenedor refleja el limite nuevo
+de inmediato. Lo que no cambia es la capacidad que kubelet publica en el
+objeto Node, porque la lee una sola vez al arrancar y se queda con ella. Para
+el laboratorio da igual: las peticiones de los pods ocupan el 21 al 26 por
+ciento de lo que kubelet cree que hay, asi que sobra sitio para planificar, y
+la proteccion real contra el OOM la aplica el cgroup, que si esta al dia.
