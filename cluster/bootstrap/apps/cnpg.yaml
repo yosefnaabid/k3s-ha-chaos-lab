@@ -20,6 +20,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # El CRD Pooler pasa del limite de anotacion de kubectl apply, y sin
+      # server-side apply ArgoCD lo salta sin avisar. El operador arranca a
+      # medias y se queda en CrashLoopBackOff buscando ese kind.
+      - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
