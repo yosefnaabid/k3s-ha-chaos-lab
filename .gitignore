@@ -20,3 +20,6 @@ drills/*.tmp
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Kit de ejecucion local con binarios y credenciales generadas
+local/
