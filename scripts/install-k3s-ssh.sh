@@ -17,11 +17,15 @@ SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ${IDENTITY:+-
 [ -f "$TOKEN_FILE" ] || openssl rand -hex 16 > "$TOKEN_FILE"
 TOKEN=$(cat "$TOKEN_FILE")
 
+# Con root no hace falta sudo, y en un contenedor LXC minimo puede que ni exista
+ELEVAR="sudo"
+[ "$USUARIO" = "root" ] && ELEVAR=""
+
 instala() {
   local ip="$1"; shift
   echo ">>> k3s en $ip $*"
   ssh $SSH_OPTS "$USUARIO@$ip" \
-    "curl -sfL https://get.k3s.io -o /tmp/k3s.sh && sudo env INSTALL_K3S_VERSION='$K3S_VERSION' K3S_TOKEN='$TOKEN' sh /tmp/k3s.sh $*"
+    "curl -sfL https://get.k3s.io -o /tmp/k3s.sh && $ELEVAR env INSTALL_K3S_VERSION='$K3S_VERSION' K3S_TOKEN='$TOKEN' sh /tmp/k3s.sh $*"
 }
 
 instala "$IP1" server --cluster-init --tls-san "$TLS_SAN"
@@ -31,6 +35,6 @@ instala "$IP2" server --server "https://$IP1:6443" --tls-san "$TLS_SAN"
 instala "$IP3" server --server "https://$IP1:6443" --tls-san "$TLS_SAN"
 
 echo ">>> trayendo kubeconfig"
-ssh $SSH_OPTS "$USUARIO@$IP1" "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig
+ssh $SSH_OPTS "$USUARIO@$IP1" "$ELEVAR cat /etc/rancher/k3s/k3s.yaml" > kubeconfig
 sed -i "s/127.0.0.1/$IP1/" kubeconfig
 echo "Listo. Prueba con  KUBECONFIG=./kubeconfig kubectl get nodes -o wide"

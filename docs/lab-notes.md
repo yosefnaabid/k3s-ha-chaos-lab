@@ -77,3 +77,38 @@ escribiendo lento, pero deja de tumbarse solo.
 
 La leccion util: cuando un cluster de Kubernetes se comporta de forma erratica
 sin una causa evidente, mira la latencia de escritura de etcd antes que nada.
+
+## De maquinas virtuales a contenedores LXC, el cambio que lo arreglo
+
+Con los nodos como maquinas virtuales el cluster no se sostenia. El motivo de
+fondo era la virtualizacion anidada: Proxmox ya corria dentro de otro
+hipervisor, y meter tres VMs mas encima significaba una segunda capa de
+traduccion para cada operacion privilegiada. Se veia en vmstat, con el tiempo
+de kernel al setenta por ciento y la espera de disco a cero.
+
+Un contenedor LXC comparte el kernel del anfitrion, asi que esa segunda capa
+desaparece. Mismo cluster, mismos tres planos de control, misma alta
+disponibilidad, pero sin el impuesto.
+
+Numeros del antes y el despues, en el mismo equipo:
+
+| | Con VMs | Con LXC |
+|---|---|---|
+| Carga del hipervisor | 8 a 10 | 3,5 |
+| RAM libre de 12 GB | 2,2 GB | 8,9 GB |
+| Desplegar tres replicas | fallaba con etcdserver leader changed | funciona |
+| Respuesta de la aplicacion | no llegaba a arrancar | 3 a 5 ms |
+
+Lo que hay que saber para correr k3s dentro de LXC:
+
+- El contenedor tiene que ser privilegiado, con nesting y keyctl activados.
+- Hay que quitarle el perfil de apparmor y no descartarle capacidades, o no
+  puede montar cgroups.
+- k3s aborta si no encuentra /dev/kmsg, que en un contenedor no existe. Se
+  resuelve apuntandolo a /dev/console con un servicio que lo rehaga en cada
+  arranque.
+- El swap del contenedor debe ser cero.
+- Los modulos overlay y br_netfilter se cargan en el anfitrion, porque el
+  kernel es compartido.
+
+Todo eso esta automatizado en scripts/prepare-lxc.sh

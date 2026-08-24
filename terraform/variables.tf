@@ -3,8 +3,14 @@ variable "proxmox_endpoint" {
   type        = string
 }
 
-variable "proxmox_api_token" {
-  description = "Token de API con formato usuario@pve!nombre=uuid. Nunca se commitea, va en terraform.tfvars"
+variable "proxmox_username" {
+  description = "Usuario de Proxmox. Tiene que ser root@pam para crear contenedores privilegiados"
+  type        = string
+  default     = "root@pam"
+}
+
+variable "proxmox_password" {
+  description = "Contrasena de root@pam. Nunca se commitea, va en terraform.tfvars"
   type        = string
   sensitive   = true
 }
@@ -20,10 +26,10 @@ variable "proxmox_node" {
   type        = string
 }
 
-variable "template_vmid" {
-  description = "VMID de la plantilla cloud-init de Debian 12 (paso 0.1 del plan)"
-  type        = number
-  default     = 9000
+variable "lxc_template" {
+  description = "Plantilla LXC de Debian 12 en Proxmox. Descargala con: pveam download local debian-12-standard_12.12-1_amd64.tar.zst"
+  type        = string
+  default     = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 }
 
 variable "gateway" {
@@ -42,9 +48,9 @@ variable "ssh_public_key" {
 }
 
 variable "vm_user" {
-  description = "Usuario que crea cloud-init en los nodos"
+  description = "Usuario de acceso a los nodos. En LXC se entra como root"
   type        = string
-  default     = "admin"
+  default     = "root"
 }
 
 # Tres nodos server de k3s. Las IPs deben estar FUERA del rango DHCP.

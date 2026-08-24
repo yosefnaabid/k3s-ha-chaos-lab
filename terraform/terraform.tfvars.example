@@ -2,11 +2,14 @@
 # terraform.tfvars esta en el .gitignore y nunca sube al repo.
 
 proxmox_endpoint  = "https://10.0.10.2:8006/"
-proxmox_api_token = "terraform@pve!lab=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# root@pam con contrasena: Proxmox no deja crear contenedores privilegiados con token
+proxmox_username  = "root@pam"
+proxmox_password  = "tu-contrasena-de-root"
 proxmox_node      = "pve"
 gateway           = "10.0.10.1"
 dns_server        = "1.1.1.1"   # usa un resolver REAL, no el gateway si tu router no resuelve DNS
 ssh_public_key    = "ssh-ed25519 AAAA... tu-clave-publica"
+lxc_template      = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 
 # Ajusta los VMID e IPs a tu red. Las IPs, fuera del rango DHCP.
 nodes = {
