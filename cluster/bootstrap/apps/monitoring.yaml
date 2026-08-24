@@ -12,10 +12,19 @@ spec:
     chart: kube-prometheus-stack
     targetRevision: 62.7.0
     helm:
+      # Valores dimensionados para un laboratorio pequeno. Este stack es la carga
+      # mas pesada del cluster, y en hardware modesto (o virtualizacion anidada)
+      # tumba el plano de control si se deja con los valores por defecto.
       valuesObject:
         grafana:
           # Cambia la clave en el primer arranque desde la propia UI
           adminPassword: cambiame-en-el-primer-login
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
           ingress:
             enabled: true
             ingressClassName: traefik
@@ -29,12 +38,38 @@ spec:
                 secretName: grafana-tls
         prometheus:
           prometheusSpec:
-            retention: 7d
+            retention: 2d
+            # Menos frecuencia de scrapeo, menos CPU en un lab
+            scrapeInterval: 60s
+            evaluationInterval: 60s
             resources:
               requests:
-                memory: 512Mi
+                cpu: 100m
+                memory: 256Mi
               limits:
-                memory: 1Gi
+                memory: 640Mi
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                cpu: 20m
+                memory: 64Mi
+              limits:
+                memory: 128Mi
+        kube-state-metrics:
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+        prometheus-node-exporter:
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

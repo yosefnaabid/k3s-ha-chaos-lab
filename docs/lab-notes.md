@@ -25,3 +25,26 @@ minutos por VM. Funciona, pero es un laboratorio, no produccion.
 
 Instalar con `kubectl apply --server-side` para evitar el error de anotacion
 demasiado larga en el CRD applicationsets.
+
+## Dimensionado en hardware modesto
+
+Medido en un Ryzen 5 2600 (6 nucleos) con Proxmox anidado en VirtualBox. Tres
+nodos server de k3s significan tres planos de control completos (apiserver,
+etcd, scheduler, controller manager) y eso satura la CPU. El sintoma no es
+memoria sino tiempo de KERNEL: con vmstat se ve sy al 70 u 80 por ciento y wa
+casi a cero, que es la penalizacion de la virtualizacion anidada.
+
+Lo que ayuda, por orden de efecto:
+
+1. Dar mas vCPUs a la VM que aloja Proxmox, sin pasar de los hilos del anfitrion.
+2. Apagar lo que no usas de ArgoCD, que por defecto trae SSO, notificaciones y
+   applicationsets: `kubectl -n argocd scale deploy/argocd-dex-server
+   deploy/argocd-notifications-controller deploy/argocd-applicationset-controller
+   --replicas=0`
+3. Poner limites de recursos al stack de Prometheus y bajar retencion y
+   frecuencia de scrapeo, como esta en cluster/bootstrap/apps/monitoring.yaml
+4. Arrancar los nodos escalonados en lugar de los tres a la vez.
+
+Lo que NO hay que hacer es bajar de tres servers a uno. La alta disponibilidad
+es el corazon del laboratorio y sin quorum de etcd el simulacro 1 no demuestra
+nada.
