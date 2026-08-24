@@ -1,0 +1,22 @@
+# Inventario para el playbook oficial k3s-io/k3s-ansible.
+# Copia como inventory.yml (ignorado por git) y ajusta IPs y usuario.
+# Los TRES nodos van en el grupo server: alta disponibilidad con etcd embebido.
+
+k3s_cluster:
+  children:
+    server:
+      hosts:
+        10.0.10.11:
+        10.0.10.12:
+        10.0.10.13:
+    agent:
+      hosts: {}
+
+  vars:
+    ansible_user: admin
+    k3s_version: v1.30.4+k3s1
+    # Genera el token con: openssl rand -hex 16
+    token: "CAMBIA-ESTE-TOKEN"
+    api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
+    # TLS SAN extra para poder mover el kubeconfig entre maquinas
+    extra_server_args: "--tls-san lab.yosefnaabid.com"

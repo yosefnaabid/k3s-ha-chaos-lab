@@ -1,0 +1,16 @@
+# Copia este fichero como terraform.tfvars y rellena con TUS valores.
+# terraform.tfvars esta en el .gitignore y nunca sube al repo.
+
+proxmox_endpoint  = "https://10.0.10.2:8006/"
+proxmox_api_token = "terraform@pve!lab=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_node      = "pve"
+gateway           = "10.0.10.1"
+dns_server        = "10.0.10.1"
+ssh_public_key    = "ssh-ed25519 AAAA... tu-clave-publica"
+
+# Ajusta los VMID e IPs a tu red. Las IPs, fuera del rango DHCP.
+nodes = {
+  "k3s-1" = { vmid = 201, ip = "10.0.10.11/24" }
+  "k3s-2" = { vmid = 202, ip = "10.0.10.12/24" }
+  "k3s-3" = { vmid = 203, ip = "10.0.10.13/24" }
+}

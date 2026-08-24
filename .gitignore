@@ -1,0 +1,22 @@
+# Secretos y estado local. Nada de esto sube al repo.
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/tfplan
+
+# Inventario real de Ansible con IPs y token. Se versiona solo el .example
+ansible/inventory.yml
+ansible/k3s-ansible/
+
+# Credenciales del cluster
+kubeconfig
+*.kubeconfig
+
+# Logs de trabajo de los simulacros. La evidencia curada vive en docs/
+drills/*.log
+drills/*.tmp
+
+# Sistema
+.DS_Store
+Thumbs.db

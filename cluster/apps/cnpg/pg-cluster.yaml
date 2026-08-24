@@ -1,0 +1,27 @@
+# PostgreSQL con primario y replica en nodos distintos y failover automatico.
+# Esta es la carga con estado que protagoniza los simulacros 1 y 4.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-lab
+  namespace: database
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+  bootstrap:
+    initdb:
+      database: labdb
+      owner: lab
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi

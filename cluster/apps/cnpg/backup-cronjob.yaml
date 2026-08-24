@@ -1,0 +1,55 @@
+# Copia logica nocturna de la base de datos. El simulacro 4 restaura desde aqui.
+# El PVC usa local-path para que el repo funcione tal cual. Para produccion de
+# laboratorio de verdad, cambia el storageClass por tu NFS del NAS y la copia
+# sobrevive a la destruccion del cluster (asi lo exige el simulacro 4).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pg-dumps
+  namespace: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-dump-nightly
+  namespace: database
+spec:
+  schedule: "15 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-dump
+              image: ghcr.io/cloudnative-pg/postgresql:16.4
+              command:
+                - /bin/sh
+                - -c
+                - >
+                  pg_dump -h pg-lab-rw -U lab -d labdb
+                  -f /dumps/labdb-$(date +%Y%m%d-%H%M).sql
+                  && ls -lh /dumps/ | tail -n 5
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-lab-app
+                      key: password
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: pg-dumps

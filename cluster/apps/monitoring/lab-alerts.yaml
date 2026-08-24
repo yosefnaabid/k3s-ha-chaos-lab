@@ -1,0 +1,27 @@
+# Las dos alertas minimas del laboratorio, ademas de las que trae el stack.
+# El checkpoint de la fase 3 es recibir NodeDown por tu canal habitual.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lab-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: lab.rules
+      rules:
+        - alert: LabNodeDown
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Nodo {{ $labels.node }} lleva 2 minutos sin estar Ready"
+        - alert: LabPodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "El pod {{ $labels.namespace }}/{{ $labels.pod }} esta en bucle de reinicios"
