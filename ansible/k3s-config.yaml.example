@@ -1,0 +1,19 @@
+# Copia este fichero a /etc/rancher/k3s/config.yaml en CADA nodo server
+# antes de arrancar k3s. Es la forma limpia de pasar argumentos a k3s: no
+# toques nunca /etc/systemd/system/k3s.service a mano.
+#
+# Por que este tuning:
+# etcd hace fsync en cada escritura y es brutalmente sensible a la latencia de
+# disco. Con los valores por defecto (heartbeat 100ms, eleccion 1000ms) un
+# almacenamiento lento hace que cada miembro crea que sus pares han muerto,
+# se dispara una eleccion de lider detras de otra y el apiserver acaba
+# devolviendo ServiceUnavailable. En este laboratorio, sobre virtualizacion
+# anidada, las escrituras de etcd tardaban entre 500 y 980 ms (lo normal es
+# menos de 10 ms) y el cluster se caia solo.
+#
+# Subiendo los tiempos, etcd tolera el almacenamiento lento: sigue siendo
+# lento, pero deja de provocar tormentas de elecciones y el cluster aguanta.
+# En hardware con disco decente esto no hace falta.
+etcd-arg:
+  - heartbeat-interval=500
+  - election-timeout=5000

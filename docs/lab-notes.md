@@ -48,3 +48,32 @@ Lo que ayuda, por orden de efecto:
 Lo que NO hay que hacer es bajar de tres servers a uno. La alta disponibilidad
 es el corazon del laboratorio y sin quorum de etcd el simulacro 1 no demuestra
 nada.
+
+## etcd y la latencia de disco, el problema que mas cuesta ver
+
+El sintoma era que el apiserver devolvia ServiceUnavailable y los nodos
+entraban y salian de NotReady sin patron claro. La causa estaba en el log de
+k3s, en avisos de etcd que es facil pasar por alto:
+
+```
+{"level":"warn","caller":"v3rpc/interceptor.go:197","msg":"request stats",
+ "time spent":"998.272477ms","response type":"/etcdserverpb.KV/Txn"}
+```
+
+Casi un segundo para una sola escritura. Lo normal es menos de diez
+milisegundos. Con esa latencia, cada miembro de etcd cree que los otros dos
+han muerto, empieza una eleccion de lider, y el cluster entra en un bucle del
+que no sale.
+
+Lo que NO lo arreglo, aunque parezca lo obvio:
+
+- Poner cache=writeback, ssd=1 e iothread=1 en los discos de las VMs. La
+  latencia siguio igual, asi que el cuello de botella no era el disco.
+- Mas memoria. Los nodos tenian casi dos gigas libres.
+
+Lo que si lo arreglo fue asumir que el almacenamiento es lento y decirle a
+etcd que sea paciente, con el fichero ansible/k3s-config.yaml.example. Sigue
+escribiendo lento, pero deja de tumbarse solo.
+
+La leccion util: cuando un cluster de Kubernetes se comporta de forma erratica
+sin una causa evidente, mira la latencia de escritura de etcd antes que nada.
