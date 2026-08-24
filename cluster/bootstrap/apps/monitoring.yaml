@@ -36,18 +36,35 @@ spec:
               - hosts:
                   - grafana.lab.yosefnaabid.com
                 secretName: grafana-tls
+        # k3s no corre estos componentes como procesos sueltos, van todos dentro
+        # del mismo binario. Los ServiceMonitor que trae el chart apuntan a
+        # puertos que aqui no existe nadie escuchando, asi que solo generan
+        # objetivos caidos y ruido en las alertas.
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeEtcd:
+          enabled: false
         prometheus:
           prometheusSpec:
-            retention: 2d
+            retention: 1d
             # Menos frecuencia de scrapeo, menos CPU en un lab
             scrapeInterval: 60s
             evaluationInterval: 60s
+            # 640Mi no llegaban. Prometheus reproduce el WAL entero al arrancar
+            # y ahi es cuando mas memoria pide, asi que el limite tiene que dar
+            # para el pico del arranque, no para el consumo en reposo. Con el
+            # limite corto entraba en bucle: moria durante el replay, al
+            # reiniciar el WAL era mayor y volvia a morir antes.
             resources:
               requests:
                 cpu: 100m
-                memory: 256Mi
+                memory: 512Mi
               limits:
-                memory: 640Mi
+                memory: 1280Mi
         alertmanager:
           alertmanagerSpec:
             resources:
