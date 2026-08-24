@@ -21,3 +21,11 @@ kubectl get nodes -o wide
 Los tres nodos deben aparecer en Ready con los roles control-plane, etcd y master. Esa salida es la captura 2 del proyecto.
 
 La version de k3s va fijada en el inventario a proposito. Un laboratorio sin versiones fijadas se rompe solo a los tres meses.
+
+## Alternativa sin Ansible
+
+Si tu controlador no corre Ansible (por ejemplo Windows con Git Bash), usa el instalador por SSH directo:
+
+```bash
+IDENTITY=~/.ssh/mi_clave ./scripts/install-k3s-ssh.sh <ip1> <ip2> <ip3> <usuario>
+```

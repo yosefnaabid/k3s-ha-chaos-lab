@@ -11,7 +11,8 @@ IP2="${2:?}"; IP3="${3:?}"; USUARIO="${4:?}"
 TOKEN_FILE="${5:-k3s-token}"
 K3S_VERSION="v1.30.4+k3s1"
 TLS_SAN="lab.yosefnaabid.com"
-SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+# IDENTITY (opcional): ruta a una clave SSH privada, por ejemplo IDENTITY=~/.ssh/id_lab
+SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ${IDENTITY:+-o IdentitiesOnly=yes -i $IDENTITY}"
 
 [ -f "$TOKEN_FILE" ] || openssl rand -hex 16 > "$TOKEN_FILE"
 TOKEN=$(cat "$TOKEN_FILE")

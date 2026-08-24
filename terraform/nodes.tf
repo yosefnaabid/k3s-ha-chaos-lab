@@ -21,7 +21,7 @@ resource "proxmox_virtual_environment_vm" "k3s_node" {
   }
 
   memory {
-    dedicated = 4096
+    dedicated = 3072
   }
 
   disk {
