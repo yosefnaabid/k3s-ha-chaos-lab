@@ -32,6 +32,13 @@ spec:
         serviceMonitor:
           enabled: true
           interval: 15s
+          # Sin esta etiqueta el ServiceMonitor se crea pero Prometheus no lo
+          # mira. El operador solo recoge los que casan con su selector, que
+          # por defecto es release igual al nombre de la release del chart de
+          # monitorizacion. Es un fallo silencioso tipico: el objeto existe,
+          # kubectl lo lista, y sin embargo no se scrapea nada.
+          additionalLabels:
+            release: monitoring
         ingress:
           enabled: true
           className: traefik
