@@ -14,16 +14,26 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
+  # MetalLB convierte entre versiones de sus CRD con un webhook, y su propio
+  # controlador le inyecta en caliente el certificado de ese webhook: 1500
+  # caracteres de caBundle que en Git no estan ni pueden estar, porque los
+  # genera el cluster al arrancar. ArgoCD comparaba lo que hay con lo que dice
+  # el repositorio, veia esa diferencia y dejaba la aplicacion OutOfSync para
+  # siempre aunque el despliegue fuese correcto.
+  #
+  # Es el caso de libro de ignoreDifferences: un campo que el cluster gestiona
+  # legitimamente y del que Git no debe ser la fuente de la verdad.
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /spec/conversion/webhook/clientConfig/caBundle
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      # El CRD bggpeers.metallb.io es lo bastante grande como para que el
-      # diff del lado cliente no cuadre nunca y la aplicacion se quede
-      # OutOfSync para siempre aunque el despliegue este perfecto. Con
-      # server-side apply el propio API server lleva la cuenta de los campos.
       - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
