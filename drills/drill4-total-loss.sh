@@ -83,11 +83,24 @@ marca "FASE F. Los dos pasos manuales por diseno"
 kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.24/releases/cnpg-1.24.0.yaml >>"$LOG" 2>&1
 marca "  CRD de CloudNativePG instalados con server-side apply"
 kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f - >>"$LOG" 2>&1
-echo ""
-echo ">>> Pega AHORA en otra terminal el secreto de Cloudflare (docs/setup-secrets.md)"
-echo "    y pulsa Enter aqui cuando este creado."
-read -r
-marca "  Secreto de Cloudflare confirmado"
+
+# El token sigue sin estar en Git, pero tampoco hace falta pararse a teclearlo:
+# se guarda una vez en local/, que el .gitignore excluye, y de ahi se recrea el
+# secreto. Si el fichero no esta, el simulacro se para y lo pide, como antes.
+TOKEN_CF="$LOCAL_DIR/cloudflare-token.txt"
+if [ -s "$TOKEN_CF" ]; then
+  kubectl -n cert-manager create secret generic cloudflare-api-token \
+    --from-literal=api-token="$(cat "$TOKEN_CF")" \
+    --dry-run=client -o yaml | kubectl apply -f - >>"$LOG" 2>&1
+  marca "  Secreto de Cloudflare recreado desde local/cloudflare-token.txt"
+else
+  echo ""
+  echo ">>> No encuentro $TOKEN_CF"
+  echo "    Pega AHORA en otra terminal el secreto de Cloudflare"
+  echo "    (docs/setup-secrets.md) y pulsa Enter aqui cuando este creado."
+  read -r
+  marca "  Secreto de Cloudflare confirmado a mano"
+fi
 
 marca "FASE G. Root app. A partir de aqui Git reconstruye el resto solo"
 kubectl apply -n argocd -f "$REPO_DIR/cluster/bootstrap/root-app.yaml" >>"$LOG" 2>&1
