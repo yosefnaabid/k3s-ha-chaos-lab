@@ -14,8 +14,6 @@ spec:
     helm:
       valuesObject:
         replicaCount: 3
-        image:
-          tag: no-existe
         resources:
           requests:
             cpu: 100m
