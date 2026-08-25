@@ -58,6 +58,13 @@ for id in "${VMIDS[@]}"; do
   $SSH "root@$PVE" "pct stop $id || true; sleep 2; pct start $id" >>"$LOG" 2>&1
 done
 
+# Los nodos son nuevos y tienen claves de host nuevas, pero known_hosts guarda
+# las de los que acabamos de destruir. StrictHostKeyChecking=accept-new acepta
+# hosts DESCONOCIDOS, no hosts CAMBIADOS: ante una clave distinta aborta con
+# REMOTE HOST IDENTIFICATION HAS CHANGED y el bucle de espera no termina nunca.
+marca "Olvidando las claves SSH de los nodos destruidos"
+for ip in "${IPS[@]}"; do ssh-keygen -R "$ip" >/dev/null 2>&1 || true; done
+
 marca "Esperando SSH en los tres nodos"
 for ip in "${IPS[@]}"; do
   until $SSH -o BatchMode=yes "root@$ip" true 2>/dev/null; do sleep 5; done
@@ -75,7 +82,13 @@ kubectl get nodes -o wide 2>&1 | tee -a "$LOG"
 
 marca "FASE E. ArgoCD"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f - >>"$LOG" 2>&1
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml >>"$LOG" 2>&1
+# --server-side no es opcional aqui. El CRD applicationsets.argoproj.io pasa de
+# los 262144 bytes que admite una anotacion, y un apply del lado cliente guarda
+# el manifiesto entero en kubectl.kubernetes.io/last-applied-configuration, asi
+# que revienta. Con server-side apply no hay tal anotacion. Es el mismo problema
+# que tienen los CRD de CloudNativePG, ver docs/lab-notes.md
+kubectl apply --server-side --force-conflicts -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml >>"$LOG" 2>&1
 kubectl -n argocd rollout status deploy/argocd-repo-server --timeout=600s >>"$LOG" 2>&1
 marca "ArgoCD arriba"
 
