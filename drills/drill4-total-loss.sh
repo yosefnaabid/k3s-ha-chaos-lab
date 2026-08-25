@@ -126,9 +126,15 @@ marca "PostgreSQL en alta disponibilidad"
 
 marca "FASE H. Restaurando los datos desde la copia"
 PRIMARIO=$(kubectl -n database get pod -l cnpg.io/instanceRole=primary -o jsonpath='{.items[0].metadata.name}')
-kubectl -n database cp "$DUMP" "$PRIMARIO:/tmp/restore.sql" >>"$LOG" 2>&1
-kubectl -n database exec "$PRIMARIO" -- psql -U postgres -d labdb -f /tmp/restore.sql >>"$LOG" 2>&1
-marca "Datos restaurados en $PRIMARIO"
+# El dump entra por la entrada estandar y no con kubectl cp. En Git Bash sobre
+# Windows, MSYS reescribe cualquier argumento con pinta de ruta unix antes de
+# pasarselo a un .exe: "database/pg-lab-1:/tmp/restore.sql" acaba convertido en
+# una ruta de Windows y kubectl busca un pod que no existe. Por stdin no hay
+# ninguna ruta que reescribir, y ademas no deja basura dentro del contenedor.
+kubectl -n database exec -i "$PRIMARIO" -- psql -U postgres -d labdb < "$DUMP" >>"$LOG" 2>&1
+FILAS=$(kubectl -n database exec "$PRIMARIO" -- psql -U postgres -d labdb -tAc \
+  "SELECT count(*) FROM incidentes" 2>/dev/null | tr -d '[:space:]')
+marca "Datos restaurados en $PRIMARIO (${FILAS:-0} filas en incidentes)"
 
 marca "FASE I. Esperando el 200 de la aplicacion"
 until [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$APP" 2>/dev/null)" = "200" ]; do

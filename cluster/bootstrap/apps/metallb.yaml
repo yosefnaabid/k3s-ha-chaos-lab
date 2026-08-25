@@ -20,6 +20,11 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # El CRD bggpeers.metallb.io es lo bastante grande como para que el
+      # diff del lado cliente no cuadre nunca y la aplicacion se quede
+      # OutOfSync para siempre aunque el despliegue este perfecto. Con
+      # server-side apply el propio API server lleva la cuenta de los campos.
+      - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
