@@ -30,11 +30,15 @@ resource "proxmox_virtual_environment_container" "k3s_node" {
   }
 
   cpu {
-    cores = 2
+    cores = 3
   }
 
   memory {
-    dedicated = 3072
+    # Medido: con 3072 el nodo que aloja Prometheus se quedaba al 82 por ciento
+    # y el stack de monitorizacion moria por OOM al reproducir su WAL. Con 4096
+    # se queda sobre el 45. En LXC esto es un limite de cgroup, no una reserva,
+    # asi que el anfitrion solo entrega lo que el contenedor use de verdad.
+    dedicated = 4096
     # k3s se niega a arrancar con swap activo
     swap = 0
   }

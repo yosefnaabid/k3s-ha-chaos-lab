@@ -1,26 +1,49 @@
 #!/usr/bin/env bash
 # SIMULACRO 1. Muere un nodo a las 3 de la manana.
-# Se ejecuta DESDE EL HIPERVISOR Proxmox (o via ssh root@proxmox desde tu equipo).
-# Parada dura de la VM que aloja el primario de PostgreSQL, sin apagado limpio.
 #
-# En otra terminal, ANTES de lanzar esto, arranca ./monitor.sh
+# Se ejecuta EN EL ANFITRION Proxmox, o desde tu equipo con
+#   ssh root@192.168.1.40 '/root/drill1-node-death.sh 203'
+#
+# Parada dura del contenedor que aloja el primario de PostgreSQL, sin apagado
+# limpio. Equivale a tirar del cable: el nodo no avisa a nadie de que se va.
+#
+# Antes de lanzarlo, en OTRA terminal, arranca ./monitor.sh
 #
 # Uso: ./drill1-node-death.sh <vmid-de-la-victima>
+#
+# Para elegir la victima, mira antes que nodo aloja el primario:
+#   kubectl -n database get cluster pg-lab -o jsonpath='{.status.currentPrimary}'
+#   kubectl -n database get pods -o wide
+# El objetivo es matar el nodo del PRIMARIO, que es el caso peor: obliga a un
+# failover de la base de datos ademas de a reprogramar los pods.
 set -euo pipefail
 
-VMID="${1:?Uso: $0 <vmid>  (mira antes que nodo aloja el primario: kubectl -n database get pods -o wide)}"
+VMID="${1:?Uso: $0 <vmid>  (203 si el primario esta en k3s-3)}"
 
-echo "$(date +%T) Parada dura del VMID $VMID"
+# Los nodos son contenedores LXC, no maquinas virtuales, asi que la herramienta
+# es pct y no qm. Un 'pct stop' es una parada dura, que es justo lo que
+# queremos: si usaramos 'pct shutdown' el nodo se despediria por las buenas y
+# el simulacro no probaria nada.
+echo "$(date +%T) Parada dura del contenedor $VMID"
 T0=$(date +%s)
-qm stop "$VMID"
+pct stop "$VMID"
 
-echo "$(date +%T) VM parada. Ahora observa desde tu equipo:"
-echo "  watch kubectl get nodes"
-echo "  watch kubectl get pods -A -o wide"
-echo "  kubectl -n database get cluster pg-lab   (failover del primario)"
+echo "$(date +%T) Nodo caido. T0 del apagon: $T0 (epoch)"
 echo ""
-echo "Cuando el monitor vuelva a dar 200 sostenido, apunta los segundos."
-echo "Para cerrar el simulacro, reenciende el nodo y comprueba que vuelve a Ready:"
-echo "  qm start $VMID"
+echo "Observa AHORA desde tu equipo, en terminales separadas:"
+echo "  kubectl get nodes -w"
+echo "  kubectl -n database get cluster pg-lab -w"
+echo "  kubectl get pods -A -o wide | grep -v Running"
 echo ""
-echo "T0 del apagon: $T0 (epoch) — cruzalo con el log del monitor"
+echo "Lo que tiene que pasar:"
+echo "  1. El nodo tarda ~40 s en pasar a NotReady (es el node-monitor-grace-period)"
+echo "  2. etcd sigue con quorum, 2 de 3, asi que la API nunca deja de responder"
+echo "  3. CloudNativePG promociona la replica a primario"
+echo "  4. Los pods del nodo muerto se recrean en los otros dos"
+echo ""
+echo "Cuando el monitor vuelva a dar 200 sostenido, corta el monitor con Ctrl+C"
+echo "y apunta el hueco que te imprima."
+echo ""
+echo "Para cerrar el simulacro, reenciende el nodo:"
+echo "  pct start $VMID"
+echo "y comprueba que vuelve a Ready:  kubectl get nodes"
