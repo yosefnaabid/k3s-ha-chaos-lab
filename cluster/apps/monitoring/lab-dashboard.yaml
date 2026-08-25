@@ -1,0 +1,328 @@
+# Panel propio del laboratorio.
+#
+# Los paneles que trae kube-prometheus-stack estan pensados para operar un
+# cluster, no para contar una historia. Este junta en una sola pantalla las tres
+# series que demuestran el simulacro 3: cuantas replicas hay, cuanto tarda la
+# aplicacion y cuantas peticiones esta aguantando.
+#
+# El sidecar de Grafana carga cualquier ConfigMap de este namespace que lleve la
+# etiqueta grafana_dashboard, asi que el panel entra por GitOps como todo lo
+# demas y se recrea solo tras una perdida total.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-drills-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  lab-drills.json: |
+    {
+      "uid": "lab-drills",
+      "title": "Laboratorio / Simulacros",
+      "tags": ["lab"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Replicas ahora",
+          "gridPos": { "h": 5, "w": 5, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "blue", "value": null },
+                  { "color": "orange", "value": 4 },
+                  { "color": "red", "value": 6 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "kube_deployment_status_replicas_available{namespace=\"podinfo\",deployment=\"podinfo\"}",
+              "legendFormat": "replicas listas"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Latencia p95",
+          "gridPos": { "h": 5, "w": 5, "x": 5, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 2,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 1.5 },
+                  { "color": "red", "value": 2 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"podinfo\"}[1m])) by (le))",
+              "legendFormat": "p95"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Peticiones por segundo",
+          "gridPos": { "h": 5, "w": 5, "x": 10, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "reqps", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "purple" } },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(http_request_duration_seconds_count{namespace=\"podinfo\"}[1m]))",
+              "legendFormat": "req/s"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Nodos listos",
+          "gridPos": { "h": 5, "w": 4, "x": 15, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 2 },
+                  { "color": "green", "value": 3 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+              "legendFormat": "nodos Ready"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "PostgreSQL en HA",
+          "gridPos": { "h": 5, "w": 5, "x": 19, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 1 },
+                  { "color": "green", "value": 2 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "count(kube_pod_status_ready{namespace=\"database\",condition=\"true\"} == 1)",
+              "legendFormat": "instancias listas"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Replicas de podinfo: lo que pide el HPA frente a lo que hay",
+          "description": "Durante el simulacro 3 esta grafica tiene que subir de 3 a 6 en escalon.",
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "stepAfter",
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["min", "max", "lastNotNull"] },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "kube_deployment_status_replicas_available{namespace=\"podinfo\",deployment=\"podinfo\"}",
+              "legendFormat": "replicas sirviendo"
+            },
+            {
+              "refId": "B",
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"podinfo\",horizontalpodautoscaler=\"podinfo\"}",
+              "legendFormat": "replicas que pide el HPA"
+            },
+            {
+              "refId": "C",
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"podinfo\",horizontalpodautoscaler=\"podinfo\"}",
+              "legendFormat": "techo del HPA"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Latencia que ve el usuario, p50 p95 p99",
+          "description": "La prueba del simulacro 3: la carga sube pero esto se mantiene plano.",
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{namespace=\"podinfo\"}[1m])) by (le))",
+              "legendFormat": "p50"
+            },
+            {
+              "refId": "B",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"podinfo\"}[1m])) by (le))",
+              "legendFormat": "p95"
+            },
+            {
+              "refId": "C",
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"podinfo\"}[1m])) by (le))",
+              "legendFormat": "p99"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Peticiones por segundo y reparto por nodo",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "min": 0,
+              "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20, "stacking": { "mode": "normal" }, "showPoints": "never" }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (pod) (rate(http_request_duration_seconds_count{namespace=\"podinfo\"}[1m]))",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Nodos listos, simulacros 1 y 4",
+          "description": "Al matar un nodo esto baja a 2 y el cluster sigue vivo, porque etcd conserva el quorum.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "min": 0,
+              "max": 4,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "stepAfter",
+                "lineWidth": 2,
+                "fillOpacity": 20,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["min", "lastNotNull"] },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+              "legendFormat": "nodos Ready"
+            },
+            {
+              "refId": "B",
+              "expr": "count(kube_pod_status_ready{namespace=\"database\",condition=\"true\"} == 1)",
+              "legendFormat": "instancias de PostgreSQL listas"
+            }
+          ]
+        }
+      ]
+    }
