@@ -1,8 +1,8 @@
 # k3s HA chaos lab
 
-Three node Kubernetes cluster on Proxmox that I deploy from code, manage from Git and break on purpose to prove it recovers. Everything in the stack is declared in this repository. The only thing created by hand is one DNS token and that is documented.
+Three node Kubernetes cluster on Proxmox that I deploy from code, manage from Git and break to prove it recovers. Everything in the stack is declared in this repository. The only thing created by hand is one DNS token and that is documented.
 
-I run production alone at my day job and my rule there is simple. Anything I operate must survive me breaking it. This lab applies that rule to Kubernetes. Four drills recreate the four incidents every platform meets sooner or later. A node dies in the middle of the night. A bad deploy ships on a Friday. Traffic spikes. The whole cluster is lost. Each drill is a script with a stopwatch and the numbers land in the table below.
+I run production alone at my day job, and my rule there is that anything I operate must survive me breaking it. This lab applies the same rule to Kubernetes. Four drills recreate the four incidents every platform meets sooner or later: a node dying in the middle of the night, a bad deploy shipped on a Friday, a traffic spike and the loss of the whole cluster. Each drill is a script with a stopwatch and the numbers land in the table below.
 
 ## Results
 
@@ -13,23 +13,23 @@ I run production alone at my day job and my rule there is simple. Anything I ope
 | 3. Load spike | k6, 60 virtual users for five minutes | **924512 requests at 3081 req/s, p95 22.34 ms, zero failures.** The HPA went from 3 to 6 replicas in 40 s and back down 6 minutes after the load stopped |
 | 4. Total loss | terraform destroy of all three nodes with the cluster live | **9 m 37 s** from destroy to three nodes in HA, 10 applications healthy, certificates reissued, PostgreSQL replicated and the data back from a 4 KB dump |
 
-Every number above was measured, not estimated. The screenshots and the logs
-behind them are in [docs/evidence.md](docs/evidence.md)
+Every number above was measured, and the screenshots and the logs behind them
+are in [docs/evidence.md](docs/evidence.md).
 
-Each drill was run twice on purpose, which is the whole point of writing them
-as scripts. The first pass finds what breaks, the second measures. Drill 4
-found two real bugs on its first pass and neither was in the cluster: SSH
-refused to talk to the rebuilt nodes because their host keys had changed, and
-the ArgoCD install failed because one of its CRDs is larger than the 262144
-bytes a Kubernetes annotation admits. Both are fixed in the script.
+The drills are scripts so they can be repeated, and each one was run twice.
+The first pass finds what breaks, the second measures. Drill 4 found two real
+bugs on its first pass and neither was in the cluster: SSH refused to talk to
+the rebuilt nodes because their host keys had changed, and the ArgoCD install
+failed because one of its CRDs is larger than the 262144 bytes a Kubernetes
+annotation admits. Both are fixed in the script.
 
 ## The stack
 
 | Layer | Tool | Why |
 |---|---|---|
 | Nodes | Terraform with the bpg Proxmox provider, privileged LXC containers | The cluster starts from a terraform apply, which is what makes drill 4 possible. They are containers and not VMs because nested virtualisation pushed etcd writes to 500-980 ms and the cluster ate itself in leader elections. See [docs/lab-notes.md](docs/lab-notes.md) |
-| Cluster | k3s, three servers with embedded etcd | Real quorum. With one master you cannot kill the master and tell the story |
-| Deployments | ArgoCD with an app of apps | If it is not in Git it does not exist. Rollback is a revert |
+| Cluster | k3s, three servers with embedded etcd | Three servers give a real quorum. With a single master the cluster would not survive losing it |
+| Deployments | ArgoCD with an app of apps | Only what is in Git gets deployed, so a rollback is a git revert |
 | Stateful workload | PostgreSQL with CloudNativePG | Primary and replica on different nodes with automatic failover |
 | Stateless workload | podinfo with 3 replicas and an HPA | Built for demos of health probes and autoscaling |
 | Ingress and TLS | Traefik plus cert-manager with DNS challenge | Real certificates on a private cluster, nothing exposed to the internet |
@@ -56,7 +56,7 @@ kubectl create namespace argocd
 kubectl apply --server-side -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl apply -n argocd -f cluster/bootstrap/root-app.yaml
 
-# 5. The two manual steps, both on purpose (see docs/setup-secrets.md)
+# 5. The two steps that stay manual (see docs/setup-secrets.md)
 kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.24/releases/cnpg-1.24.0.yaml
 kubectl -n cert-manager create secret generic cloudflare-api-token --from-literal=api-token=YOUR_TOKEN
 ```
@@ -68,8 +68,8 @@ does all of it unattended.
 Then run the drills in [drills/](drills/) and fill the results table with what
 your own hardware gives you.
 
-## Honest scope
+## Scope
 
-This lab does not recreate multi tenant RBAC at company scale, managed control planes or a service mesh. It recreates operations. Deploying, watching, breaking and recovering a small cluster end to end, with numbers instead of adjectives.
+This lab does not recreate multi tenant RBAC at company scale, managed control planes or a service mesh. It recreates operations: deploying, watching, breaking and recovering a small cluster end to end, with each result measured.
 
-Versions are pinned everywhere on purpose. A lab without pinned versions breaks by itself in three months.
+Versions are pinned everywhere, because a lab without pinned versions breaks by itself in three months.

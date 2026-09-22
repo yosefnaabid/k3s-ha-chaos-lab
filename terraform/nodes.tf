@@ -1,4 +1,4 @@
-# Nodos del cluster como CONTENEDORES LXC, no como maquinas virtuales.
+# Nodos del cluster como contenedores LXC, no como maquinas virtuales.
 #
 # Por que LXC y no VMs:
 # Un contenedor comparte el kernel del anfitrion, asi que no hay una segunda

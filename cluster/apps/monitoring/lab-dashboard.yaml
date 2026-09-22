@@ -1,9 +1,9 @@
 # Panel propio del laboratorio.
 #
 # Los paneles que trae kube-prometheus-stack estan pensados para operar un
-# cluster, no para contar una historia. Este junta en una sola pantalla las tres
-# series que demuestran el simulacro 3: cuantas replicas hay, cuanto tarda la
-# aplicacion y cuantas peticiones esta aguantando.
+# cluster. Este junta en una sola pantalla las tres series que demuestran el
+# simulacro 3: cuantas replicas hay, cuanto tarda la aplicacion y cuantas
+# peticiones esta aguantando.
 #
 # El sidecar de Grafana carga cualquier ConfigMap de este namespace que lleve la
 # etiqueta grafana_dashboard, asi que el panel entra por GitOps como todo lo

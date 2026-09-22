@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Saca una copia de la base de datos FUERA del cluster.
+# Saca una copia de la base de datos fuera del cluster.
 #
 # Se lanza desde Git Bash, en drills/:   ./sacar-dump.sh
 #
 # El CronJob nocturno deja sus dumps en un PVC, que esta muy bien para el dia a
 # dia pero no sirve para el simulacro 4: ese PVC vive dentro de lo que vamos a
-# destruir. Una copia que muere con el sistema que respalda no es una copia.
+# destruir.
 #
 # Aqui el dump sale por stdout y aterriza en tu equipo, que es el unico sitio
 # que va a sobrevivir al terraform destroy.

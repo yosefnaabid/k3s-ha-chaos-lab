@@ -1,4 +1,4 @@
-# Copia este fichero a /etc/rancher/k3s/config.yaml en CADA nodo server
+# Copia este fichero a /etc/rancher/k3s/config.yaml en cada nodo server
 # antes de arrancar k3s. Es la forma limpia de pasar argumentos a k3s: no
 # toques nunca /etc/systemd/system/k3s.service a mano.
 #

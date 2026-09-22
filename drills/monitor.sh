@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Vigilante de disponibilidad. Corre en una terminal aparte durante CUALQUIER simulacro.
+# Vigilante de disponibilidad. Corre en una terminal aparte durante cualquier simulacro.
 # Registra cada medio segundo el codigo HTTP y al cortar con Ctrl+C imprime el resumen
 # con los huecos de indisponibilidad detectados y su duracion total.
 set -euo pipefail

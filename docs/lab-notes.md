@@ -1,11 +1,11 @@
 # Notas de ejecucion del laboratorio
 
-Aprendizajes reales al desplegar sobre Proxmox anidado en VirtualBox.
+Aprendizajes al desplegar sobre Proxmox anidado en VirtualBox.
 
 ## DNS de los nodos
 
 Las VMs Debian cloud usan systemd-resolved y /etc/resolv.conf es un symlink a
-/run/systemd/resolve/resolv.conf. Escribir /etc/resolv.conf a mano NO persiste.
+/run/systemd/resolve/resolv.conf. Escribir /etc/resolv.conf a mano no persiste.
 Si el gateway de tu red no resuelve DNS, los pulls de imagenes de containerd
 fallan con "lookup registry-1.docker.io: Try again". Fija un resolver real asi:
 
@@ -30,9 +30,9 @@ demasiado larga en el CRD applicationsets.
 
 Medido en un Ryzen 5 2600 (6 nucleos) con Proxmox anidado en VirtualBox. Tres
 nodos server de k3s significan tres planos de control completos (apiserver,
-etcd, scheduler, controller manager) y eso satura la CPU. El sintoma no es
-memoria sino tiempo de KERNEL: con vmstat se ve sy al 70 u 80 por ciento y wa
-casi a cero, que es la penalizacion de la virtualizacion anidada.
+etcd, scheduler, controller manager) y eso satura la CPU. El sintoma esta en
+el tiempo de kernel y no en la memoria: con vmstat se ve sy al 70 u 80 por
+ciento y wa casi a cero, que es la penalizacion de la virtualizacion anidada.
 
 Lo que ayuda, por orden de efecto:
 
@@ -45,8 +45,8 @@ Lo que ayuda, por orden de efecto:
    frecuencia de scrapeo, como esta en cluster/bootstrap/apps/monitoring.yaml
 4. Arrancar los nodos escalonados en lugar de los tres a la vez.
 
-Lo que NO hay que hacer es bajar de tres servers a uno. La alta disponibilidad
-es el corazon del laboratorio y sin quorum de etcd el simulacro 1 no demuestra
+No hay que bajar de tres servers a uno. La alta disponibilidad es lo que el
+laboratorio pone a prueba, y sin quorum de etcd el simulacro 1 no demuestra
 nada.
 
 ## etcd y la latencia de disco, el problema que mas cuesta ver
@@ -65,7 +65,7 @@ milisegundos. Con esa latencia, cada miembro de etcd cree que los otros dos
 han muerto, empieza una eleccion de lider, y el cluster entra en un bucle del
 que no sale.
 
-Lo que NO lo arreglo, aunque parezca lo obvio:
+Lo que no lo arreglo, aunque parezca lo obvio:
 
 - Poner cache=writeback, ssd=1 e iothread=1 en los discos de las VMs. La
   latencia siguio igual, asi que el cuello de botella no era el disco.
@@ -75,8 +75,8 @@ Lo que si lo arreglo fue asumir que el almacenamiento es lento y decirle a
 etcd que sea paciente, con el fichero ansible/k3s-config.yaml.example. Sigue
 escribiendo lento, pero deja de tumbarse solo.
 
-La leccion util: cuando un cluster de Kubernetes se comporta de forma erratica
-sin una causa evidente, mira la latencia de escritura de etcd antes que nada.
+Si un cluster de Kubernetes se comporta de forma erratica sin una causa
+evidente, mira primero la latencia de escritura de etcd.
 
 ## De maquinas virtuales a contenedores LXC, el cambio que lo arreglo
 
@@ -87,8 +87,8 @@ traduccion para cada operacion privilegiada. Se veia en vmstat, con el tiempo
 de kernel al setenta por ciento y la espera de disco a cero.
 
 Un contenedor LXC comparte el kernel del anfitrion, asi que esa segunda capa
-desaparece. Mismo cluster, mismos tres planos de control, misma alta
-disponibilidad, pero sin el impuesto.
+desaparece. El cluster conserva sus tres planos de control y la alta
+disponibilidad, pero sin esa penalizacion.
 
 Numeros del antes y el despues, en el mismo equipo:
 
@@ -130,12 +130,12 @@ level=info component=tsdb msg="Replaying WAL, this may take a while"
 level=info component=tsdb msg="WAL segment loaded" segment=1 maxSegment=8
 ```
 
-Moria reproduciendo el WAL, no sirviendo consultas. Prometheus pide mucha mas
-memoria al arrancar que en reposo, porque tiene que reconstruir en RAM todo lo
-que aun no ha bajado a bloques. Con el limite en 640Mi eso se convertia en un
-bucle que se alimentaba solo: moria a mitad del replay, al reiniciar el WAL
-era mas largo que antes, y volvia a morir un poco mas pronto. Cuantos mas
-reinicios, mas lejos quedaba el arranque.
+Moria mientras reproducia el WAL, antes de llegar a servir consultas.
+Prometheus pide mucha mas memoria al arrancar que en reposo, porque tiene que
+reconstruir en RAM todo lo que aun no ha bajado a bloques. Con el limite en
+640Mi eso se convertia en un bucle que se alimentaba solo: moria a mitad del
+replay, al reiniciar el WAL era mas largo que antes, y volvia a morir un poco
+mas pronto.
 
 Dos cosas que aprender de aqui:
 

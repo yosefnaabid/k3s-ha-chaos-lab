@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Siembra labdb con datos reales del laboratorio.
 #
-# Sin esto el simulacro 4 no demuestra nada: restaurar una base de datos vacia
-# es restaurar nada. La tabla guarda el registro de los propios simulacros, asi
+# Sin datos, el simulacro 4 restauraria una base de datos vacia y no
+# demostraria nada. La tabla guarda el registro de los propios simulacros, asi
 # que despues de la perdida total puedes consultarla y ver que las filas que
-# escribiste ANTES de destruir el cluster siguen ahi.
+# escribiste antes de destruir el cluster siguen ahi.
 #
 # Uso, desde Git Bash en drills/:   ./seed-datos.sh
 set -euo pipefail

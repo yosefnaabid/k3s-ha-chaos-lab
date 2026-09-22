@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# SIMULACRO 4. Perdida total del cluster, cronometrada de principio a fin.
+# Simulacro 4. Perdida total del cluster, cronometrada de principio a fin.
 #
-# Destruye los TRES nodos con el cluster vivo y lo reconstruye entero desde
+# Destruye los tres nodos con el cluster vivo y lo reconstruye entero desde
 # codigo, Git y la ultima copia de la base de datos. La cifra final es el
-# titular del proyecto: cuantos minutos tarda en volver TODO.
+# titular del proyecto: cuantos minutos tarda en volver todo.
 #
 # Se lanza desde Git Bash, en el directorio local/ del repo:
 #   ./drill4-total-loss.sh <ruta-al-dump.sql>
 #
-# REQUISITO PREVIO INNEGOCIABLE
-#   Tener el dump FUERA del cluster. Si el unico respaldo vive dentro de lo que
-#   vas a destruir, no es un respaldo. Sacalo antes con:
+# Requisito previo
+#   Tener el dump fuera del cluster. Si el unico respaldo vive dentro de lo que
+#   vas a destruir, se pierde con todo lo demas. Sacalo antes con:
 #     ./sacar-dump.sh
 #
-# Lo unico que NO vuelve solo son dos secretos, y esta bien que sea asi:
+# Lo unico que no vuelve solo son dos secretos, y esta bien que sea asi:
 #   - el token de Cloudflare, que nunca debe estar en un repo publico
 #   - el CRD Pooler de CloudNativePG, que pasa del limite de kubectl apply
 # El script se para y te los pide.
@@ -60,7 +60,7 @@ done
 
 # Los nodos son nuevos y tienen claves de host nuevas, pero known_hosts guarda
 # las de los que acabamos de destruir. StrictHostKeyChecking=accept-new acepta
-# hosts DESCONOCIDOS, no hosts CAMBIADOS: ante una clave distinta aborta con
+# hosts desconocidos, no hosts cambiados: ante una clave distinta aborta con
 # REMOTE HOST IDENTIFICATION HAS CHANGED y el bucle de espera no termina nunca.
 marca "Olvidando las claves SSH de los nodos destruidos"
 for ip in "${IPS[@]}"; do ssh-keygen -R "$ip" >/dev/null 2>&1 || true; done

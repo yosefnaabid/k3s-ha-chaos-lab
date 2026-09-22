@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deja la terminal lista para los simulacros.
 #
-# Se CARGA, no se ejecuta, porque tiene que modificar la sesion actual:
+# Se carga, no se ejecuta, porque tiene que modificar la sesion actual:
 #   . ./entorno.sh
 #
 # Los scripts de simulacro se apanan solos, esto es para los bucles de

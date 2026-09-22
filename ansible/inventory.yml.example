@@ -1,6 +1,6 @@
 # Inventario para el playbook oficial k3s-io/k3s-ansible.
 # Copia como inventory.yml (ignorado por git) y ajusta IPs y usuario.
-# Los TRES nodos van en el grupo server: alta disponibilidad con etcd embebido.
+# Los tres nodos van en el grupo server: alta disponibilidad con etcd embebido.
 
 k3s_cluster:
   children:

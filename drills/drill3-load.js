@@ -1,8 +1,8 @@
-// SIMULACRO 3. Pico de carga hasta disparar el autoescalado.
+// Simulacro 3. Pico de carga hasta disparar el autoescalado.
 //
-// POR QUE NO SE USA /delay/1
+// Por que no se usa /delay/1
 // La primera version pegaba a /delay/1, que suena a carga pero no lo es: ese
-// endpoint DUERME un segundo, no calcula nada. El HPA de este laboratorio
+// endpoint duerme un segundo, no calcula nada. El HPA de este laboratorio
 // escala por CPU, y un proceso dormido no gasta CPU, asi que el autoescalado
 // no se enteraba de nada por mucho trafico que le echaras. Medido: 80 usuarios
 // contra /delay/1 dejaban los pods a 3 milicores.
@@ -24,8 +24,8 @@ export const options = {
     { duration: '1m', target: 0 },    // enfriamiento, las replicas bajan solas
   ],
   thresholds: {
-    // El objetivo no es que la latencia no suba nada, es que se mantenga en un
-    // rango util mientras el cluster absorbe el pico anadiendo replicas.
+    // La latencia puede subir algo, pero tiene que mantenerse en un rango util
+    // mientras el cluster absorbe el pico anadiendo replicas.
     http_req_duration: ['p(95)<500'],
     http_req_failed: ['rate<0.01'],
   },

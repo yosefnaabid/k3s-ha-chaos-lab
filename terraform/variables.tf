@@ -53,7 +53,7 @@ variable "vm_user" {
   default     = "root"
 }
 
-# Tres nodos server de k3s. Las IPs deben estar FUERA del rango DHCP.
+# Tres nodos server de k3s. Las IPs deben estar fuera del rango DHCP.
 variable "nodes" {
   description = "Mapa de nodos del cluster con su vmid e IP en formato CIDR"
   type = map(object({

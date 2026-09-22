@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deja los contenedores LXC en condiciones de correr k3s.
 #
-# Se ejecuta EN EL ANFITRION Proxmox, despues del terraform apply y antes de
+# Se ejecuta en el anfitrion Proxmox, despues del terraform apply y antes de
 # instalar k3s. Es idempotente.
 #
 # Uso:  ./prepare-lxc.sh 201 202 203

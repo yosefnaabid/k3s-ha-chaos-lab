@@ -1,4 +1,4 @@
-# Rango RESERVADO fuera del DHCP de tu VLAN. Ajustalo a tu red.
+# Rango reservado fuera del DHCP de tu VLAN. Ajustalo a tu red.
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:

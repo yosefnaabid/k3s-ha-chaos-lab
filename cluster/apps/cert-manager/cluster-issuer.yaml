@@ -1,7 +1,7 @@
 # Certificados reales de Let's Encrypt por reto DNS contra Cloudflare.
-# El cluster no expone NADA a internet: el reto es un TXT en tu zona DNS.
+# El cluster no expone nada a internet: el reto es un TXT en tu zona DNS.
 #
-# El token de Cloudflare es el UNICO secreto del proyecto y NUNCA toca Git.
+# El token de Cloudflare es el unico secreto del proyecto y nunca toca Git.
 # Se crea una vez, a mano, y queda documentado en docs/setup-secrets.md:
 #   kubectl -n cert-manager create secret generic cloudflare-api-token \
 #     --from-literal=api-token=TU_TOKEN

@@ -11,7 +11,7 @@ terraform {
 
 # Autenticacion con usuario y contrasena, no con token de API.
 #
-# Proxmox solo deja crear contenedores PRIVILEGIADOS con feature flags a
+# Proxmox solo deja crear contenedores privilegiados con feature flags a
 # root@pam autenticado de verdad. Un token de API, aunque sea de root@pam,
 # recibe un 403: "changing feature flags for privileged container is only
 # allowed for root@pam". Como los nodos de k3s tienen que ser privilegiados,

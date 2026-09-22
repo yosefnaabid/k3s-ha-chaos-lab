@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# SIMULACRO 2. Despliegue roto un viernes por la tarde.
+# Simulacro 2. Despliegue roto un viernes por la tarde.
 #
-# Publica una version de podinfo que no existe. Lo interesante no es que falle,
-# es que NO PASE NADA: la sonda de readiness frena el despliegue progresivo y
-# las replicas viejas siguen atendiendo. El usuario no se entera.
+# Publica una version de podinfo que no existe. El despliegue falla sin que el
+# servicio se corte: la sonda de readiness frena el despliegue progresivo y las
+# replicas viejas siguen atendiendo, asi que el usuario no se entera.
 #
-# El rollback no se hace tocando el cluster, se hace revirtiendo el commit.
-# Git es la fuente de la verdad, asi que deshacer en Git es deshacer en produccion.
+# El rollback se hace revirtiendo el commit, sin tocar el cluster. Git es la
+# fuente de la verdad, asi que deshacer el cambio en Git lo deshace tambien en
+# produccion.
 #
-# En otra terminal, arranca ./monitor.sh y dejalo corriendo TODO el ciclo.
-# La cifra que buscas en su resumen es CERO segundos de indisponibilidad.
+# En otra terminal, arranca ./monitor.sh y dejalo corriendo todo el ciclo.
+# La cifra que buscas en su resumen es cero segundos de indisponibilidad.
 #
 # Uso, desde Git Bash en drills/:   ./drill2-broken-deploy.sh
 set -euo pipefail

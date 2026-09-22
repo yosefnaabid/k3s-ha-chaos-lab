@@ -25,10 +25,10 @@ spec:
           minReplicas: 3
           maxReplicas: 6
           cpu: 60
-        # Sin esto el simulacro 3 no se puede demostrar. Que el HPA suba de 3 a
-        # 6 replicas no dice nada por si solo: lo que hay que probar es que la
-        # latencia que ve el usuario se mantiene mientras sube. Y para eso hay
-        # que scrapear a la propia aplicacion, no solo al cluster.
+        # Sin esto el simulacro 3 no se puede demostrar. Ademas de ver que el
+        # HPA sube de 3 a 6 replicas, hay que probar que la latencia que ve el
+        # usuario se mantiene mientras sube, y para eso hay que scrapear a la
+        # propia aplicacion, no solo al cluster.
         serviceMonitor:
           enabled: true
           interval: 15s

@@ -1,6 +1,6 @@
 # El unico secreto del proyecto
 
-Todo el repositorio es publico y reproducible menos una cosa, el token de Cloudflare que usa cert-manager para el reto DNS. Se crea una vez, a mano, despues de instalar cert-manager y antes de que ArgoCD sincronice el ClusterIssuer.
+Todo el repositorio es publico y reproducible menos el token de Cloudflare que usa cert-manager para el reto DNS. Se crea una vez, a mano, despues de instalar cert-manager y antes de que ArgoCD sincronice el ClusterIssuer.
 
 ## Crear el token
 

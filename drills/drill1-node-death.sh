@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# SIMULACRO 1. Muere un nodo a las 3 de la manana.
+# Simulacro 1. Muere un nodo a las 3 de la manana.
 #
-# Se ejecuta EN EL ANFITRION Proxmox, o desde tu equipo con
+# Se ejecuta en el anfitrion Proxmox, o desde tu equipo con
 #   ssh root@192.168.1.40 '/root/drill1-node-death.sh 203'
 #
 # Parada dura del contenedor que aloja el primario de PostgreSQL, sin apagado
 # limpio. Equivale a tirar del cable: el nodo no avisa a nadie de que se va.
 #
-# Antes de lanzarlo, en OTRA terminal, arranca ./monitor.sh
+# Antes de lanzarlo, en otra terminal, arranca ./monitor.sh
 #
 # Uso: ./drill1-node-death.sh <vmid-de-la-victima>
 #
 # Para elegir la victima, mira antes que nodo aloja el primario:
 #   kubectl -n database get cluster pg-lab -o jsonpath='{.status.currentPrimary}'
 #   kubectl -n database get pods -o wide
-# El objetivo es matar el nodo del PRIMARIO, que es el caso peor: obliga a un
+# El objetivo es matar el nodo del primario, que es el caso peor: obliga a un
 # failover de la base de datos ademas de a reprogramar los pods.
 set -euo pipefail
 
